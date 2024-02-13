@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content= "width=device-width, initial-scale=1.0"> 
+    <script type="module" src="./pong.js" defer></script>
+    <link rel="stylesheet" type="text/css" href="./pong.css">
+    <script type="importmap"> { "imports": 
+        { "three": "https://unpkg.com/three@0.161.0/build/three.module.js", 
+            "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/" } } </script>
+</head>
+<body>
+    <div id="playPongDiv" text-align: center;">
+        <input type="text" id="player2NameInput" placeholder="Enter Player 2's name"></input><br>
+        <button id="playPongButtonLocal">PLAY PONG LOCALLY</button>
+        <button id="playPongButtonAI">PLAY PONG AGAINST COMPUTER</button>
+        <button id="playPongButtonRemote">PLAY PONG REMOTELY</button>
+        <button id="changeBackgroundColour">CHANGE BACKGROUND</button>
+        <button id="enablePowerups">POWERUPS: OFF</button>
+        <canvas id="pongCanvas" width="800" height="600"></canvas>
+    </div>
+</body>
+</html>
