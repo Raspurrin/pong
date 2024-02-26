@@ -1,4 +1,8 @@
+import * as dat from '/node_modules/dat.gui/build/dat.gui.module.js';
 import * as THREE from 'three';
+
+const gui = new dat.GUI();
+
 const BALLSPEED = 0.3;
 var fieldWidth = 50;
 var fieldDepth = 1;
@@ -15,7 +19,6 @@ var darkBackground = true;
 var scoreText = document.getElementById("score");
 var darkColour = 0x111111;
 var lightColour = 0xeeeeee;
-
 
 let enablePowerups = false;
 
@@ -43,10 +46,10 @@ let wKeyPressed = false, sKeyPressed = false;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-scene.background = new THREE.Color(0x262626);
 
 const renderer = new THREE.WebGLRenderer({
-    canvas: document.querySelector('canvas')
+    canvas: document.querySelector('canvas'),
+    antialias: true
 });
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -55,32 +58,103 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild( renderer.domElement );
 
 // camera
-camera.rotation.x = 1.41;
-camera.rotation.y = 0.54;
-camera.rotation.z = 0;
+camera.position.x = 17.7;
+camera.position.y = -17.5;
+camera.position.z = 15.5;
 
-camera.position.x = 14.09;
-camera.position.y = -40;
-camera.position.z = 20;
-
-var originalCameraPosition = new THREE.Vector3(14.09, -40, 20);
-var originalCameraRotation = new THREE.Euler(1.41, 0.54, 0, 'XYZ'); 
-var isCameraOriginal = true;
-
-var distance = camera.position.z;
-var center = new THREE.Vector3(0, 0, 0);
-var centerX = window.innerWidth / 2;
-var centerY = window.innerHeight / 2;
-var radius = 20;
-var angle = -Math.PI / 2;
+camera.rotation.x = 0.62;
+camera.rotation.y = 0.28;
+camera.rotation.z = 0.35;
 
 // create field
 var fieldGeometry = new THREE.BoxGeometry(fieldWidth, fieldHeight, fieldDepth, 1, 1, 1);
-var fieldMaterial = new THREE.MeshLambertMaterial({ color: darkColour, side: THREE.BackSide });
+var fieldMaterial = new THREE.MeshPhongMaterial({ color: darkColour, side: THREE.BackSide, shininess: 30});
 var field = new THREE.Mesh(fieldGeometry, fieldMaterial);
 field.position.set(0, 0, 0);
 field.receiveShadow = true;
 scene.add(field);
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 1)
+scene.add(ambientLight)
+const pointLight = new THREE.PointLight(0xffffff, 0.5)
+pointLight.position.x = 2
+pointLight.position.y = 3
+pointLight.position.z = 4
+scene.add(pointLight)
+
+var spotlight = new THREE.DirectionalLight(0xe069ff, 1);
+spotlight.intensity = 0.9;
+spotlight.position.x = -220;
+spotlight.position.y = 177;
+spotlight.position.z = 200;
+spotlight.castShadow = true;
+scene.add(spotlight);
+
+var light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(0, -300, 200);
+light.castShadow = true;
+
+light.shadow.mapSize.width = 1024;
+light.shadow.mapSize.height = 1024;
+light.shadow.camera.near = 0.5;
+light.shadow.camera.far = 500;
+light.intensity = 2;
+scene.add(light);
+
+// dat.gui
+const cameraFolder = gui.addFolder('Camera')
+cameraFolder.add(camera.position, 'x', -100, 100).name('Position X').onChange(cameraLog);
+cameraFolder.add(camera.position, 'y', -100, 100).name('Position Y').onChange(cameraLog);
+cameraFolder.add(camera.position, 'z', -100, 100).name('Position Z').onChange(cameraLog);
+cameraFolder.add(camera.rotation, 'x', -Math.PI, Math.PI).name('Rotation X').onChange(cameraLog);
+cameraFolder.add(camera.rotation, 'y', -Math.PI, Math.PI).name('Rotation Y').onChange(cameraLog);
+cameraFolder.add(camera.rotation, 'z', -Math.PI, Math.PI).name('Rotation Z').onChange(cameraLog);
+
+const fieldFolder = gui.addFolder('field')
+fieldFolder.add(field.position, 'x', -100, 100).name('Position X').listen();
+fieldFolder.add(field.position, 'y', -100, 100).name('Position Y').listen();
+fieldFolder.add(field.position, 'z', -100, 100).name('Position Z').listen();
+fieldFolder.add(field.rotation, 'x', -Math.PI, Math.PI).name('Rotation X').listen();
+fieldFolder.add(field.rotation, 'y', -Math.PI, Math.PI).name('Rotation Y').listen();
+fieldFolder.add(field.rotation, 'z', -Math.PI, Math.PI).name('Rotation Z').listen();
+
+const spotlightFolder = gui.addFolder('spotlight');
+spotlightFolder.add(spotlight, 'intensity', 0, 2).name('Intensity');
+spotlightFolder.add(spotlight.position, 'x', -500, 500).name('Position X');
+spotlightFolder.add(spotlight.position, 'y', -500, 500).name('Position Y');
+spotlightFolder.add(spotlight.position, 'z', -500, 500).name('Position Z');
+spotlightFolder.addColor(light, 'color').name('Color').onFinishChange(function(colorValue) {
+    console.log(colorValue);
+});
+
+
+spotlightFolder.add(spotlight, 'intensity', 0, 2).name('Intensity');
+
+const lightFolder = gui.addFolder('light')
+lightFolder.add(light, 'intensity', 0, 2).name('Intensity');
+const params = {
+    sliderValue: 0
+};
+lightFolder.add(light.position, 'x', -500, 500).name('Position X');
+lightFolder.add(light.position, 'y', -500, 500).name('Position Y');
+lightFolder.add(light.position, 'z', -500, 500).name('Position Z');
+lightFolder.addColor(light, 'color').name('Color').onFinishChange(function(colorValue) {
+    console.log(colorValue);
+});
+
+light.position.x = -21;
+light.position.y = -485;
+light.position.z = 199;
+light.intensity = 5;
+light.color.set(0xe069ff);
+
+function cameraLog()
+{
+    console.log(camera.position);
+    console.log(camera.rotation);
+}
+
+cameraFolder.open()
 
 class paddle {
     constructor(){
@@ -114,7 +188,6 @@ class Ball {
         this.speed = BALLSPEED;
         this.dx = 0;
         this.dy = 0;
-        console.log(this.dx, this.dy);
         this.active = false;
         this.reset();
     }
@@ -138,7 +211,6 @@ class enlargePaddle extends Ball {
         this.scale = 0.2;
     }
     power(paddle){
-        console.log("power");
         paddle.object.scale.y += this.scale;
         removePowerup();
     }
@@ -149,7 +221,6 @@ class speedUpBall extends Ball {
         super("red");
     }
     power(paddle){
-        console.log("power");
         if (paddle.speed < 1.2) paddle.speed *= 1.05;
         removePowerup();
     }
@@ -159,83 +230,45 @@ var powerup = new Ball("#bbbbbb");
 
 var ball = new Ball("#eeeeee");
 scene.add(ball.object);
+ball.object.castShadow = true;
+ball.object.receiveShadow = true;
+
+const ballFolder = gui.addFolder('ball');
+ballFolder.add(ball.object.position, 'z', -100, 100).name('Position Z').listen();
 
 // create paddle
 var leftPaddle = new paddle();
 var rightPaddle = new paddle();
-leftPaddle.object.position.x = -(fieldWidth / 2);
-rightPaddle.object.position.x = fieldWidth / 2;
+leftPaddle.object.position.x = -(fieldWidth / 2) + leftPaddle.width;
+rightPaddle.object.position.x = fieldWidth / 2 - leftPaddle.width;
 leftPaddle.object.receiveShadow = true;
 rightPaddle.object.receiveShadow = true;
 rightPaddle.object.position.z += fieldDepth;
 leftPaddle.object.position.z += fieldDepth;
-rightPaddle.castShadow = true;
-leftPaddle.castShadow = true;
-rightPaddle.receiveShadow = true;
-leftPaddle.receiveShadow = true;
+rightPaddle.object.castShadow = true;
+leftPaddle.object.castShadow = true;
+rightPaddle.object.receiveShadow = true;
+leftPaddle.object.receiveShadow = true;
 scene.add(leftPaddle.object);
 scene.add(rightPaddle.object);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 1)
-scene.add(ambientLight)
-const pointLight = new THREE.PointLight(0xffffff, 0.5)
-pointLight.position.x = 2
-pointLight.position.y = 3
-pointLight.position.z = 4
-scene.add(pointLight)
+var dottedLineGeometry = new THREE.BufferGeometry();
+var positions = new Float32Array([
+    0, -(fieldHeight / 2) + 1, 0,  
+    0, fieldHeight / 2 - 1, 0    
+]);
+dottedLineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3)); 
 
-var light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(0, -300, 200);
-light.castShadow = true;
-light.castShadow = true;
+var dottedLineMaterial = new THREE.LineDashedMaterial({
+    color: 0xFFD1DC,
+    dashSize: 0.5,
+    gapSize: 0.5, 
+    opacity: 0.5
+});
 
-light.shadow.mapSize.width = 1024;
-light.shadow.mapSize.height = 1024;
-light.shadow.camera.near = 0.5;
-light.shadow.camera.far = 500;
-light.intensity = 2;
-scene.add(light);
-
-
-var sensitivity = 0.00004;
-var rotationEnabled = false;
-
-// function resetCamera() {
-//     if (!isCameraOriginal) {
-//         rotationEnabled = false;
-//         camera.position.copy(originalCameraPosition);
-//         camera.rotation.copy(originalCameraRotation);
-//         camera.lookAt(0, 0, 0);
-//         isCameraOriginal = true;
-//     }
-// }
-
-// document.addEventListener('mousemove', function(event) {
-//     if (rotationEnabled){
-//         var deltaX = (event.clientX - centerX) * sensitivity;
-//         var deltaY = (event.clientY - centerY) * sensitivity;
-//         angle = Math.atan2(deltaY, deltaX);
-//         isCameraOriginal = false;
-//     }
-// });
-
-// document.addEventListener('wheel', function(event) {
-//     if (rotationEnabled){
-//         distance -= event.deltaY * sensitivity;
-//         distance = Math.max(distance, 20);
-//         distance = Math.min(distance, 100); 
-//         isCameraOriginal = false;
-//     }
-// });
-
-// document.addEventListener('click', function(event) {
-//     rotationEnabled = !rotationEnabled;
-// });
-
-var newX = center.x + radius * Math.cos(angle);
-var newY = center.y + radius * Math.sin(angle);
-camera.position.set(newX, newY, distance);
-camera.lookAt(center);
+var dottedLine = new THREE.Line(dottedLineGeometry, dottedLineMaterial);
+dottedLine.computeLineDistances();
+scene.add(dottedLine);
 
 function animate() {
     if (gameStarted){
@@ -293,7 +326,6 @@ function movePowerup() {
     if (powerup.active == true){
         powerup.object.position.x += powerup.dx * powerup.speed;
         powerup.object.position.y += powerup.dy * powerup.speed;
-        console.log(powerup.dx);
         if (powerup.object.position.y + powerup.radius > fieldTop) powerup.dy = Math.abs(powerup.dy) * -1;
         else if (powerup.object.position.y - powerup.radius < fieldBottom) powerup.dy = Math.abs(powerup.dy);
         if (powerup.object.position.x < leftPaddle.object.position.x + leftPaddle.width && powerup.object.position.y > leftPaddle.object.position.y - leftPaddle.height / 2 && powerup.object.position.y < leftPaddle.object.position.y + leftPaddle.height / 2)
@@ -338,13 +370,12 @@ function moveBall() {
     else if (ball.object.position.x + ball.radius > fieldRight || ball.object.position.x - ball.radius < fieldLeft) {
         if (ball.object.position.x + ball.radius > fieldRight) leftPaddle.score++;
         else rightPaddle.score++;
-        checkWinner();
+        //checkWinner();
         ball.reset();
     }
     // Reset ball if it goes out of bounds
     ball.object.position.y += ball.dy * ball.speed;
     ball.object.position.x += ball.dx * ball.speed;
-    console.log(ball.dx);
 }
 
 function paddleCollision(paddle) {

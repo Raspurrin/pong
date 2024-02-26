@@ -3,10 +3,10 @@
 }
 
 #canvas-container {
-    position: relative; /* Ensure relative positioning for absolute positioning of text */
-    display: flex; /* Use flexbox for centering */
-    justify-content: center; /* Center horizontally */
-    align-items: center; /* Center vertically */
+    position: relative; 
+    display: flex; 
+    justify-content: center;
+    align-items: center;
 }
 
 #centered-text {
