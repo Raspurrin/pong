@@ -1,8 +1,8 @@
 import * as dat from '/node_modules/dat.gui/build/dat.gui.module.js';
 import * as THREE from 'three';
 
-const BALLSPEED = 0.3;
-const BALLSPEEDMAX = 0.5;
+const BALLSPEED = 0.4;
+const BALLSPEEDMAX = 0.6;
 const PADDLESPEED = 0.2;
 
 const gui = new dat.GUI();
@@ -61,8 +61,8 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild( renderer.domElement );
 
 // camera
-camera.position.x = 13;
-camera.position.y = -15;
+camera.position.x = 16;
+camera.position.y = -18;
 camera.position.z = 15.5;
 
 camera.rotation.x = 0.62;
@@ -217,8 +217,8 @@ class Ball {
     reset(){
         this.object.position.x = 0;
         this.object.position.y = 0;
-        this.dx = getRandomNumberBetween(0.2, 0.6);
-        this.dy = getRandomNumberBetween(0.2, 0.6);
+        this.dx = getRandomNumberBetween(0.4, 0.6);
+        this.dy = getRandomNumberBetween(0.4, 0.6);
         this.normalizeDirection();
     }
 };
@@ -240,7 +240,7 @@ class speedUpBall extends Ball {
     }
     power(paddle){
         paddle.speed = 1.50;
-        paddle.material.color.set(0xff0000);
+        paddle.material.color.set(0xf26262);
         removePowerup();
     }
 };
@@ -272,19 +272,10 @@ scene.add(leftPaddle.object);
 scene.add(rightPaddle.object);
 
 var dottedLineGeometry = new THREE.BufferGeometry();
-var positions = new Float32Array([
-    0, -(fieldHeight / 2) + 1, 0,  
-    0, (fieldHeight / 2) - 1, 0    
-]);
+var positions = new Float32Array([0, -(fieldHeight / 2) + 1, 0,  
+                                    0, (fieldHeight / 2) - 1, 0]);
 dottedLineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3)); 
-
-var dottedLineMaterial = new THREE.LineDashedMaterial({
-    color: 0xFFD1DC,
-    dashSize: 0.5,
-    gapSize: 0.5, 
-    opacity: 0.5
-});
-
+var dottedLineMaterial = new THREE.LineDashedMaterial({color: 0xFFD1DC, dashSize: 0.5, apSize: 0.5, opacity: 0.5});
 var dottedLine = new THREE.Line(dottedLineGeometry, dottedLineMaterial);
 dottedLine.computeLineDistances();
 scene.add(dottedLine);
@@ -483,6 +474,7 @@ function aiPredictBallPosition() {
 // // Event listeners
 document.addEventListener("keydown", function(event) {
     console.log(event.keyCode);
+    event.preventDefault();
     switch (event.keyCode) {
         case 87: // W key
             wKeyPressed = gameShouldStart && true;
