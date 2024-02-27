@@ -1,9 +1,12 @@
 import * as dat from '/node_modules/dat.gui/build/dat.gui.module.js';
 import * as THREE from 'three';
 
+const BALLSPEED = 0.3;
+const BALLSPEEDMAX = 0.5;
+const PADDLESPEED = 0.2;
+
 const gui = new dat.GUI();
 
-const BALLSPEED = 0.3;
 var fieldWidth = 50;
 var fieldDepth = 1;
 var fieldHeight = fieldWidth / 2;
@@ -12,15 +15,15 @@ var fieldBottom = -(fieldHeight / 2);
 var fieldLeft = -(fieldWidth / 2);
 var fieldRight = fieldWidth / 2;
 var paddleWidth = fieldWidth / 70;
-var paddleHeight = fieldHeight / 3;
+var paddleHeight = fieldHeight / 3.5;
 var gameShouldStart = true;
 var gameStarted = false;
 var darkBackground = true;
 var scoreText = document.getElementById("score");
 var darkColour = 0x111111;
 var lightColour = 0xeeeeee;
-
-let enablePowerups = false;
+var powerupSpeed = 1;
+var enablePowerups = false;
 
 // AI mode
 let aiMode = false;
@@ -58,8 +61,8 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild( renderer.domElement );
 
 // camera
-camera.position.x = 17.7;
-camera.position.y = -17.5;
+camera.position.x = 13;
+camera.position.y = -15;
 camera.position.z = 15.5;
 
 camera.rotation.x = 0.62;
@@ -117,15 +120,30 @@ fieldFolder.add(field.position, 'z', -100, 100).name('Position Z').listen();
 fieldFolder.add(field.rotation, 'x', -Math.PI, Math.PI).name('Rotation X').listen();
 fieldFolder.add(field.rotation, 'y', -Math.PI, Math.PI).name('Rotation Y').listen();
 fieldFolder.add(field.rotation, 'z', -Math.PI, Math.PI).name('Rotation Z').listen();
-
+fieldFolder.addColor({ materialColor: field.material.color }, 'materialColor').name('Material Color').onFinishChange(function(colorValue) {
+    var color = new THREE.Color(colorValue);
+    // Update material color of the 'field' object
+    field.material.color.set(color);
+});
 const spotlightFolder = gui.addFolder('spotlight');
 spotlightFolder.add(spotlight, 'intensity', 0, 2).name('Intensity');
 spotlightFolder.add(spotlight.position, 'x', -500, 500).name('Position X');
 spotlightFolder.add(spotlight.position, 'y', -500, 500).name('Position Y');
 spotlightFolder.add(spotlight.position, 'z', -500, 500).name('Position Z');
-spotlightFolder.addColor(light, 'color').name('Color').onFinishChange(function(colorValue) {
-    console.log(colorValue);
-});
+// Define initial color for the material
+var initialColor = '#ff0000';
+
+// Function to update material color
+function updateMaterialColor(colorValue) {
+    var color = new THREE.Color(colorValue);
+    // Recreate material with the new color
+    var newMaterial = new THREE.MeshBasicMaterial({ color: color });
+    // Update material of the 'field' object
+    field.material = newMaterial;
+}
+
+// Add color controller to the folder and directly assign functionality for color change
+fieldFolder.addColor({ materialColor: initialColor }, 'materialColor').name('Material Color').onChange(updateMaterialColor);
 
 
 spotlightFolder.add(spotlight, 'intensity', 0, 2).name('Intensity');
@@ -221,7 +239,8 @@ class speedUpBall extends Ball {
         super("red");
     }
     power(paddle){
-        if (paddle.speed < 1.2) paddle.speed *= 1.05;
+        paddle.speed = 1.50;
+        paddle.material.color.set(0xff0000);
         removePowerup();
     }
 };
@@ -255,7 +274,7 @@ scene.add(rightPaddle.object);
 var dottedLineGeometry = new THREE.BufferGeometry();
 var positions = new Float32Array([
     0, -(fieldHeight / 2) + 1, 0,  
-    0, fieldHeight / 2 - 1, 0    
+    0, (fieldHeight / 2) - 1, 0    
 ]);
 dottedLineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3)); 
 
@@ -312,13 +331,13 @@ function removePowerup(){
 
 function movePaddles() {
     if (wKeyPressed && leftPaddle.object.position.y < fieldTop - leftPaddle.height / 2) 
-        leftPaddle.object.position.y += 0.1;
+        leftPaddle.object.position.y += PADDLESPEED;
     if (sKeyPressed && (leftPaddle.object.position.y > fieldBottom + leftPaddle.height / 2)) 
-        leftPaddle.object.position.y -= 0.1;
+        leftPaddle.object.position.y -= PADDLESPEED;
     if (upArrowPressed && rightPaddle.object.position.y < fieldTop - leftPaddle.height / 2) 
-        rightPaddle.object.position.y += 0.1;
+        rightPaddle.object.position.y += PADDLESPEED;
     if (downArrowPressed  && (rightPaddle.object.position.y > fieldBottom + rightPaddle.height / 2)) 
-        rightPaddle.object.position.y -= 0.1;
+        rightPaddle.object.position.y -= PADDLESPEED;
 }
 
 function movePowerup() {
@@ -370,17 +389,32 @@ function moveBall() {
     else if (ball.object.position.x + ball.radius > fieldRight || ball.object.position.x - ball.radius < fieldLeft) {
         if (ball.object.position.x + ball.radius > fieldRight) leftPaddle.score++;
         else rightPaddle.score++;
-        //checkWinner();
+        checkWinner();
         ball.reset();
+        paddlesReset();
     }
     // Reset ball if it goes out of bounds
-    ball.object.position.y += ball.dy * ball.speed;
-    ball.object.position.x += ball.dx * ball.speed;
+    ball.object.position.y += (ball.dy * ball.speed) * powerupSpeed;
+    ball.object.position.x += (ball.dx * ball.speed) * powerupSpeed;
+}
+
+function paddlesReset()
+{
+    rightPaddle.speed = 1;
+    leftPaddle.speed = 1;
+    if (darkBackground = true){
+        rightPaddle.material.color.set(lightColour);
+        leftPaddle.material.color.set(lightColour);
+    }
+    else {
+        rightPaddle.material.color.set(darkColour);
+        leftPaddle.material.color.set(lightColour);
+    }
 }
 
 function paddleCollision(paddle) {
-    if (Math.abs(ball.dx) < 0.5) ball.dx *= 1.10; ball.dy *= 1.10;
-    ball.speed = paddle.speed;
+    if (Math.abs(ball.dx) < BALLSPEEDMAX) ball.dx *= 1.10; ball.dy *= 1.10;
+    powerupSpeed = paddle.speed;
 }
 
 function drawScore() {
@@ -512,19 +546,11 @@ document.getElementById('enablePowerups').addEventListener('click', function() {
 
 document.getElementById('changeBackgroundColour').addEventListener('click', function() {
     
-    if (darkBackground == true)
-    {
-        field.material.color.setHex(lightColour);
-        rightPaddle.material.color.setHex(darkColour);
-        leftPaddle.material.color.setHex(darkColour);
-        ball.material.color.setHex(darkColour);
+    if (darkBackground == true){
+        field.material.color.setHex(0x030626);
     }
-    else
-    {
+    else{
         field.material.color.setHex(darkColour);
-        rightPaddle.material.color.setHex(lightColour);
-        leftPaddle.material.color.setHex(lightColour);
-        ball.material.color.setHex(lightColour);
     }
     darkBackground = !darkBackground;
 });
